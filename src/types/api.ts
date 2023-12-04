@@ -6,6 +6,17 @@ export interface Result<T = any> {
   msg: string
 }
 export interface ResultData<T = any> {
+	// 如果没有在拦截器里面处理，这里就要处理
+	// data:{
+	// 	data:{
+	// 		list:T[],
+	// 		page:{
+	// 			pageNum:number,
+	// 			pageSize:number,
+	// 			total:number
+	// 		}
+	// 	}
+	// }
   list: T[]
   page: {
     pageNum: number

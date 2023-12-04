@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import axios, {AxiosError, AxiosInstance} from 'axios'
 import { showLoading, hideLoading } from './loading'
 import storage from './storage'
 import { Result } from '@/types/api'
@@ -20,52 +20,58 @@ const instance1 = axios.create({
 	baseURL: '/api',
 	headers: {
 		'Content-Type': 'application/json'
-	}
+	},
+	withCredentials: true
 })
-
-// 请求拦截器
-instance.interceptors.request.use(
-  config => {
-    if (config.showLoading) showLoading()
-    const token = storage.get('token')
-    if (token) {
-      config.headers.Authorization = 'Bearer ' + token
-    }
-    return {
-      ...config
-    }
-  },
-  (error: AxiosError) => {
-    return Promise.reject(error)
-  }
-)
+//封装了用于创建不同实例的拦截器
+const createInterceptors = (instance: AxiosInstance) => {
+	// 请求拦截器
+	instance.interceptors.request.use(
+		config => {
+			if (config.showLoading) showLoading()
+			const token = storage.get('token')
+			if (token) {
+				config.headers.Authorization = 'Bearer ' + token
+			}
+			return {
+				...config
+			}
+		},
+		(error: AxiosError) => {
+			return Promise.reject(error)
+		}
+	)
 
 // 响应拦截器
-instance.interceptors.response.use(
-  response => {
-    const data: Result = response.data
-    hideLoading()
-    if (response.config.responseType === 'blob') return response
-    if (data.code === 500001) {
-      message.error(data.msg)
-      storage.remove('token')
-      location.href = '/login?callback=' + encodeURIComponent(location.href)
-    } else if (data.code != 0) {
-      if (response.config.showError === false) {
-        return Promise.resolve(data)
-      } else {
-        message.error(data.msg)
-        return Promise.reject(data)
-      }
-    }
-    return data.data
-  },
-  error => {
-    hideLoading()
-    message.error(error.message)
-    return Promise.reject(error.message)
-  }
-)
+	instance.interceptors.response.use(
+		response => {
+			const data: Result = response.data
+			hideLoading()
+			if (response.config.responseType === 'blob') return response
+			if (data.code === 500001) {
+				message.error(data.msg)
+				storage.remove('token')
+				location.href = '/login?callback=' + encodeURIComponent(location.href)
+			} else if (data.code != 0) {
+				if (response.config.showError === false) {
+					return Promise.resolve(data)
+				} else {
+					message.error(data.msg)
+					return Promise.reject(data)
+				}
+			}
+			return data.data
+		},
+		error => {
+			hideLoading()
+			message.error(error.message)
+			return Promise.reject(error.message)
+		}
+	)
+}
+
+createInterceptors(instance)
+createInterceptors(instance1)
 
 interface IConfig {
   showLoading?: boolean
@@ -103,5 +109,5 @@ export default {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(link.href)
     })
-  }
+  },
 }

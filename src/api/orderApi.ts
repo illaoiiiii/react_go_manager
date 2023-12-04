@@ -32,9 +32,6 @@ export default {
   exportData(params: Order.SearchParams) {
     return request.downloadFile('/order/orderExport', params, '订单列表.xlsx')
   },
-	importData(params: Order.SearchParams) {
-		return request.downloadFile('/order/orderImport', params)
-	},
   // 获取城市聚合点数据
   getCityData(cityId: number) {
     return request.get1<Array<{ lng: string; lat: string }>>(`/order/cluster/${cityId}`)

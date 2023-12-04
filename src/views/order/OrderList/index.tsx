@@ -1,4 +1,4 @@
-import { Form, Table, Button, Input, Select, Space, Modal } from 'antd'
+import {Form, Table, Button, Input, Select, Space, Modal, Upload} from 'antd'
 import { useAntdTable } from 'ahooks'
 import api from '@/api/orderApi'
 import { ColumnsType } from 'antd/es/table'
@@ -10,6 +10,7 @@ import OrderMarker from './components/OrderMarker'
 import OrderRoute from './components/OrderRoute'
 import { formatDate, formatMoney } from '@/utils'
 import { message } from '@/utils/AntdGlobal'
+import {UploadProps} from "antd/es/upload/interface";
 export default function OrderList() {
   const [form] = Form.useForm()
   const orderRef = useRef<{ open: () => void }>()
@@ -24,6 +25,8 @@ export default function OrderList() {
         pageSize: pageSize
       })
       .then(data => {
+				// 有一说一我不知道为什么这里为什么data.data.data.page.total，这个data套了这么多层
+				// 解决问题，没有在拦截器里面处理
         return {
           total: data.page.total,
           list: data.list
@@ -52,7 +55,7 @@ export default function OrderList() {
       title: '下单地址',
       dataIndex: 'startAddress',
       key: 'startAddress',
-      width: 160,
+      width: 300,
       render(_, record) {
         return (
           <div>
@@ -109,12 +112,12 @@ export default function OrderList() {
             <Button type='text' onClick={() => handleDetail(record.orderId)}>
               详情
             </Button>
-            <Button type='text' onClick={() => handleMarker(record.orderId)}>
-              打点
-            </Button>
-            <Button type='text' onClick={() => handleRoute(record.orderId)}>
-              轨迹
-            </Button>
+            {/*<Button type='text' onClick={() => handleMarker(record.orderId)}>*/}
+            {/*  打点*/}
+            {/*</Button>*/}
+            {/*<Button type='text' onClick={() => handleRoute(record.orderId)}>*/}
+            {/*  轨迹*/}
+            {/*</Button>*/}
             <Button type='text' danger onClick={() => handleDel(record._id)}>
               删除
             </Button>
@@ -156,14 +159,28 @@ export default function OrderList() {
       }
     })
   }
-
+	//文件导入
+	const props: UploadProps = {
+		name: 'file',
+		action: 'https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188',
+		headers: {
+			authorization: 'authorization-text',
+		},
+		onChange(info) {
+			if (info.file.status !== 'uploading') {
+				console.log(info.file, info.fileList);
+			}
+			if (info.file.status === 'done') {
+				message.success(`${info.file.name} 文件已经上传成功`);
+			} else if (info.file.status === 'error') {
+				message.error(`${info.file.name} 文件上传失败`);
+			}
+		},
+	};
   // 文件导出
   const handleExport = () => {
     api.exportData(form.getFieldsValue())
   }
-	const handleImport = () => {
-		api.importData(form.getFieldsValue())
-	}
   return (
     <div className='OrderList'>
       <Form className='search-form' form={form} layout='inline'>
@@ -194,20 +211,34 @@ export default function OrderList() {
       </Form>
       <div className='base-table'>
         <div className='header-wrapper'>
-          <div className='title'>用户列表</div>
+          <div className='title'>订单列表（这里根据实际业务场景，订单数量会很多，所以这里故意弄了很多数据，测试go的携程效果)</div>
           <div className='action'>
             <Button type='primary' onClick={handleCreate}>
               新增
             </Button>
-						<Button type='primary' onClick={handleImport}>
-							导入
-						</Button>
+						<div style={{display:"inline-block"}}>
+							<Upload {...props}>
+								<Button type='primary'>导入</Button>
+							</Upload>
+						</div>
             <Button type='primary' onClick={handleExport}>
               导出
             </Button>
           </div>
         </div>
-        <Table bordered rowKey='_id' columns={columns} {...tableProps} />
+        <Table
+					bordered
+					rowKey='_id'
+					columns={columns}
+					{...tableProps}
+					pagination={{
+						...tableProps.pagination,
+						showQuickJumper: true,
+						showSizeChanger: true,
+						pageSizeOptions: ['10', '100', '1000', '5000'],
+						showTotal: (total, range) => `共 ${total} 条记录，当前显示 ${range[0]}-${range[1]}`,
+					}}
+				/>
       </div>
       {/* 创建订单组件 */}
       <CreateOrder mRef={orderRef} update={search.submit} />

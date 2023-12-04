@@ -1,8 +1,9 @@
-import { User } from '@/types/api'
-import { Button, Table, Form, Input, Select, Space, Modal } from 'antd'
+import {Role, User} from '@/types/api'
+import {Button, Table, Form, Input, Select, Space, Modal, Tag} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useRef, useState } from 'react'
 import api from '@/api'
+import roleApi from '@/api/roleApi'
 import { formatDate } from '@/utils'
 import CreateUser from './CreateUser'
 import { IAction } from '@/types/modal'
@@ -13,10 +14,14 @@ import SearchForm from '@/components/SearchForm'
 export default function UserList() {
   const [form] = Form.useForm()
   const [userIds, setUserIds] = useState<number[]>([])
+	const [RoleList, setRoleList] = useState<Role.RoleItem[]>([])
   const userRef = useRef<{
     open: (type: IAction, data?: User.UserItem) => void
   }>()
 
+	useEffect(() => {
+		getRoleList()
+	}, []);
   const getTableData = ({ current, pageSize }: { current: number; pageSize: number }, formData: User.SearchParams) => {
     return api
       .getUserList({
@@ -35,6 +40,13 @@ export default function UserList() {
   const { tableProps, search } = useAntdTable(getTableData, {
     form,
   })
+
+	// 获取角色列表
+	const getRoleList = async () => {
+		const list = await roleApi.getAllRoleList()
+		console.log(list)
+		setRoleList(list)
+	}
 
   // 创建用户
   const handleCreate = () => {
@@ -113,6 +125,20 @@ export default function UserList() {
         }[role]
       }
     },
+		{
+			title: '系统角色',
+			dataIndex: 'roleList',
+			key: 'roleList',
+			render(roleList: string) {
+				console.log(roleList)
+				const realRole = RoleList.find((item) => item._id === roleList)
+				return (
+					<>
+						<Tag color='error'>{realRole ? realRole.roleName : '-'}</Tag>
+					</>
+				)
+			}
+		},
     {
       title: '用户状态',
       dataIndex: 'state',
