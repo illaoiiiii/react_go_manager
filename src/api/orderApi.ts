@@ -27,7 +27,7 @@ export default {
   },
   // 删除订单
   delOrder(orderId: string) {
-    return request.post1('/order/delete', { _id: orderId })
+    return request.post1('/order/delete', { orderId: orderId })
   },
   exportData(params: Order.SearchParams) {
     return request.downloadFile('/order/orderExport', params, '订单列表.xlsx')
@@ -39,5 +39,5 @@ export default {
   // 获取司机列表
   getDrvierList(params: Order.DriverParams) {
     return request.get1<ResultData<Order.DriverItem>>('/order/driver/list', params)
-  }
+  },
 }
